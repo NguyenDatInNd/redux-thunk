@@ -1,41 +1,20 @@
-import { Button, Skeleton, TextField } from "@mui/material";
+import { Button, Skeleton} from "@mui/material";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { addState, fetchPhotos } from "../reduxToolkit/reducer";
+import {fetchPhotos, onChangeValue, confirmValue} from "../reduxToolkit/reducer";
 import { RootState, useAppDispatch } from "../index";
 import { useSelector } from "react-redux";
 
-interface IPhoto {
-  albumId: number;
-  id: number;
-  title: string;
-  url: string;
-  thumbnailUrl: string;
-}
-
 const PhotoMore: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [photos, setPhotos] = useState<IPhoto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [page, setPage] = useState<number>(0);
-  const [contextState, setContextState] = useState<string>("");
-  const [preContextState, setPreContextState] = useState<string>("");
-  const [idContent, setIdContent] = useState<number>();
-
-  console.log(preContextState)
+  const [page, setPage] = useState<number>(1);
 
   const handleSubmit = () => {
-    // dispatch(
-    //   addState({
-    //     id: idContent,
-    //     content: contextState,
-    //   })
-    // );
-    // // setIdContent(undefined);
-    // setPreContextState('')
+    dispatch(confirmValue(updatedValue))
   };
 
   const handleReset =() => {
-
+    dispatch(onChangeValue(initValue))
   }
 
   const Skeletons = () => {
@@ -43,7 +22,7 @@ const PhotoMore: React.FC = () => {
 
     for (let i = 0; i < 10; i++) {
       skeletons.push(
-        <Skeleton
+        <Skeleton 
           key={i}
           sx={{ margin: "10px 0" }}
           variant="rounded"
@@ -53,20 +32,7 @@ const PhotoMore: React.FC = () => {
       );
     }
     return <div>{skeletons}</div>;
-  };
-
-  const photoList = useSelector((state: RootState) => state.dataPhotos.photos);
-
-  useEffect(() => {
-    loadPhotos();
-  }, [page]);
-
-  const loadPhotos = async () => {
-    setLoading(true);
-    dispatch(fetchPhotos(page))
-    setPhotos([...photos, ...photoList]);
-    setLoading(false);
-  };
+    };
 
   // khi scroll đến cuối trang thì sẽ tăng page lên 1
   const observer = useRef<IntersectionObserver>();
@@ -80,59 +46,68 @@ const PhotoMore: React.FC = () => {
         }
       });
       if (node) observer.current.observe(node);
-    },
-    [loading]
-  );
+    },[loading]);
+
+  useEffect(() => {
+    const loadPhotos = async () => {
+      setLoading(true);
+      dispatch(fetchPhotos(page))
+      setLoading(false);
+    };
+    loadPhotos();
+    // eslint-disable-next-line
+  },[page]);
+
+  const initValue = useSelector((state: RootState) => state.dataPhotos.originValue);
+  const updatedValue = useSelector((state: RootState) => state.dataPhotos.updatedValue);
+
+  const handleOnChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>, id: number) => {
+    const value = e.target.value
+    const index = updatedValue.findIndex(photo => photo.id === id);
+    const updatedPhoto = { ...updatedValue[index], title: value };
+    const newUpdatedValue = [...updatedValue];
+    newUpdatedValue[index] = updatedPhoto;
+    dispatch(onChangeValue(newUpdatedValue))
+  }, [updatedValue, dispatch]);
 
   const renderPhotos = () => {
-    return photos.map((photo, index) => {
-      if (index === photos.length - 1) {
+    return updatedValue.map((photo, index) => {
+      if (index === updatedValue.length - 1) {
         return (
-          <div
-            style={{
-              border: "1px solid #ccc",
-              display: "flex",
-              width: "700px",
-              height: "120px",
-              margin: "10px",
-              background: photo.id % 2 !== 0 ? "white" : "grey",
-            }}
-            key={index}
-            ref={lastPhotoRef}
-          >
+          <div 
+          style={{
+                 border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#ccc" : "grey",
+               }}
+            key={index} ref={lastPhotoRef} >
             <img src={photo.thumbnailUrl} alt={photo.title} />
-            <span>{photo.title}</span>
-            <span>{Date.now()}</span>
+            <div style={{ flex: 1 }}>
+             <input 
+               style={{width: '573px',
+               height: '40px',
+               fontSize: 'medium'}}
+              value={photo.title}
+              onChange={e => handleOnChange(e, photo.id)}
+              />
+             <p>{Date.now()}</p>
+          </div>
           </div>
         );
       }
       return (
-        <div
-          style={{
-            border: "1px solid #ccc",
-            display: "flex",
-            width: "700px",
-            height: "120px",
-            margin: "10px",
-            background: photo.id % 2 !== 0 ? "white" : "grey",
-          }}
-          key={index}
-        >
+        <div 
+        style={{
+          border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#ccc" : "grey",
+        }}
+          key={index} >
           <img src={photo.thumbnailUrl} alt={photo.title} />
           <div style={{ flex: 1 }}>
-            <TextField
-              size="small"
-              fullWidth
-              defaultValue={preContextState || photo.title}
-              // onChange={(e) => {
-              //   const currentValue = e.target.value;
-              //   if (!preContextState) {
-              //     setPreContextState(currentValue);
-              //   }
-              //     setContextState(e.target.value);
-              //     setIdContent(photo.id);
-              // }}
-            ></TextField>
+            <input
+              style={{width: '573px',
+              height: '40px',
+              fontSize: 'medium'}}
+              value={photo.title}
+              onChange={e => handleOnChange(e, photo.id)}
+            />
             <p>{Date.now()}</p>
           </div>
         </div>
@@ -141,36 +116,17 @@ const PhotoMore: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignContent: "center",
-        flexWrap: "wrap",
-      }}
-    >
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          zIndex: "1",
-          background: "white",
-          width: "100%",
-          padding: "20px 0",
-        }}
-      >
+    <div style={{background:"black"}}>
+      <div style={{position: "fixed", top: 0, zIndex: "1", width: "100%", padding: "20px 0",background:"black"}}>
         <Button
+          disabled={JSON.stringify(initValue) === JSON.stringify(updatedValue)}
           onClick={handleSubmit}
-          sx={{ margin: "0 10px" }}
-          variant="contained"
-          color="primary"
-        >
+          sx={{ margin: "0 10px" }} variant="contained">
           Confirm
         </Button>
         <Button 
-          onClick={handleReset}
-          variant="contained" color="primary">
+          disabled={JSON.stringify(initValue) === JSON.stringify(updatedValue)}
+         onClick={handleReset} variant="contained">
           Reset
         </Button>
       </div>
