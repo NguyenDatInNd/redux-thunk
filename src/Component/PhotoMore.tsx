@@ -1,8 +1,16 @@
-import { Button, Skeleton} from "@mui/material";
+import { Button} from "@mui/material";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {fetchPhotos, onChangeValue, confirmValue} from "../reduxToolkit/reducer";
 import { RootState, useAppDispatch } from "../index";
 import { useSelector } from "react-redux";
+
+interface IPhoto {
+  albumId: number;
+  id: number;
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+}
 
 const PhotoMore: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -16,24 +24,6 @@ const PhotoMore: React.FC = () => {
   const handleReset =() => {
     dispatch(onChangeValue(initValue))
   }
-
-  const Skeletons = () => {
-    const skeletons = [];
-
-    for (let i = 0; i < 10; i++) {
-      skeletons.push(
-        <Skeleton 
-          key={i}
-          sx={{ margin: "10px 0" }}
-          variant="rounded"
-          width={700}
-          height={120}
-        />
-      );
-    }
-    return <div>{skeletons}</div>;
-    };
-
   // khi scroll đến cuối trang thì sẽ tăng page lên 1
   const observer = useRef<IntersectionObserver>();
   const lastPhotoRef = useCallback(
@@ -70,13 +60,34 @@ const PhotoMore: React.FC = () => {
     dispatch(onChangeValue(newUpdatedValue))
   }, [updatedValue, dispatch]);
 
+  // const Photo = React.memo(
+  //   ({ photo, handleOnChange }: { photo:any; handleOnChange: (e: React.ChangeEvent<HTMLInputElement>, id: number) => void }) => (
+  //     <div style={{ border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#fff" : "grey" }}>
+  //       <img src={photo.thumbnailUrl} alt={photo.title} />
+  //       <div style={{ flex: 1 }}>
+  //         <input style={{ width: '573px', height: '40px', fontSize: 'medium' }} value={photo.title} onChange={e => handleOnChange(e, photo.id)} />
+  //         <p>{Date.now()}</p>
+  //       </div>
+  //     </div>
+  //   ),
+  //   (prevProps, nextProps) => prevProps.photo === nextProps.photo && prevProps.handleOnChange === nextProps.handleOnChange);
+  
+  // const renderPhotos = () => {
+  //   return updatedValue.map((photo, index) => {
+  //     if (index === updatedValue.length - 1) {
+  //       return <div key={index} ref={lastPhotoRef}><Photo photo={photo} handleOnChange={handleOnChange} /></div>;
+  //     }
+  //     return <div key={index}><Photo photo={photo} handleOnChange={handleOnChange} /></div>;
+  //   });
+  // };
+  
   const renderPhotos = () => {
     return updatedValue.map((photo, index) => {
       if (index === updatedValue.length - 1) {
         return (
           <div 
           style={{
-                 border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#ccc" : "grey",
+                 border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#fff" : "grey",
                }}
             key={index} ref={lastPhotoRef} >
             <img src={photo.thumbnailUrl} alt={photo.title} />
@@ -96,7 +107,7 @@ const PhotoMore: React.FC = () => {
       return (
         <div 
         style={{
-          border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#ccc" : "grey",
+          border: "1px solid #ccc", display: "flex", width: "700px", height: "120px", margin: "10px", background: photo.id % 2 !== 0 ? "#fff" : "grey",
         }}
           key={index} >
           <img src={photo.thumbnailUrl} alt={photo.title} />
@@ -116,8 +127,8 @@ const PhotoMore: React.FC = () => {
   };
 
   return (
-    <div style={{background:"black"}}>
-      <div style={{position: "fixed", top: 0, zIndex: "1", width: "100%", padding: "20px 0",background:"black"}}>
+    <div>
+      <div style={{position: "fixed", top: 0, zIndex: "1", width: "100%", padding: "20px 0",background:"#fff"}}>
         <Button
           disabled={JSON.stringify(initValue) === JSON.stringify(updatedValue)}
           onClick={handleSubmit}
@@ -131,7 +142,6 @@ const PhotoMore: React.FC = () => {
         </Button>
       </div>
       <div style={{ marginTop: "65px" }}>{renderPhotos()}</div>
-      {loading && <Skeletons />}
     </div>
   );
 };
